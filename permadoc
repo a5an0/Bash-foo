@@ -1,0 +1,26 @@
+#!/bin/bash
+# AUTHOR -
+# M@ - M@sprackle.org GPG Public Key ID:  0x4ADEA413
+# NAME -
+# permadoc
+# SYNOPSIS -
+# `./permadoc`
+# DESCRIPTION -
+# To backup and document all permissions of a directories
+# and create a script to fix the permissions in case of a problem.
+# REVISIONS -
+# Only one published at this time.
+# LIMITATIONS -
+# TBD
+
+# Use:
+# Limitations: TBD
+#
+# Directory to scan.
+DIRECTORY="/home/"
+for i in `find $DIRECTORY -type d`;
+do
+	cd $i
+	echo "cd $PWD" >> /tmp/current_perms
+	ls -ls $PWD | awk '{print "chown",$4":"$5,$10}' | egrep -v "^:" >> /tmp/current_perms
+done
