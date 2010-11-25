@@ -1,0 +1,197 @@
+#!/bin/bash
+# AUTHOR -
+# M@ - M@sprackle.org GPG Public Key ID:  0x4ADEA413
+# NAME -
+# dumstr = a Satellite used to map subterranean facilites and tectonic plates
+# http://www.satnews.com/cgi-bin/display_story.cgi?number=796520090
+# SYNOPSIS -
+# ./dumstr
+# DESCRIPTION -
+# In order to check in and out files of Subversion and upload
+# them to a Red Hat Satellite Server configuration channel and be deployed
+# REQUIRMENTS -
+# This script assumes a certain setup of the subversion and
+# Satellite server.  Example is below with a DNS server
+# Subversion server repositories are inside a ConfigChannels repo.
+# Within the ConfigChannel a repo for 'DNS'.
+# Within the DNS there could be multiple folders but for this assume 'ZONES'
+# The Satellite server would have a configuration channel called.
+# DNS-ZONES and inside are the zone files to be deployed to systems.
+# REVISIONS -
+# 1.0
+
+# Subversion Server
+SUBVERSIONSERVER="https://svn.example.com/svn/repository/satelliteServer/ConfigChannels/"
+# Satellite Server
+SATELLITESERVER="satellite.example.com"
+#
+# Check to see that you have the rhncfg-manager RPM installed
+if [ ! -f "/usr/bin/rhncfg-manager" ];
+	then
+	echo "
+You must have the rhncfg-management RPM installed.
+$ sudo up2date rhncfg-management"
+	exit 1
+	fi
+#
+# Check to see that you have the subversion RPM installed
+if [ ! -f "/usr/bin/svn" ];
+        then
+        echo "
+You must have the svn RPM installed.
+$ sudo up2date subversion subversion-devel
+"
+        exit 1
+        fi
+#
+clear
+# Begin Function List
+
+# Check in files modified to the Subversion Server
+function CHECKITIN {
+   echo "
+What local working copies would you like to check back in?
+(enter the number)
+###
+"
+   select LOCALSVN in `ls ~/subversion`;
+   do
+   [ -z "${LOCALSVN}" ] && echo "Please enter a vaild number" || break;
+        done
+echo "
+Please select the subdirectory
+"
+        select LOCALSVNSUB in `ls ~/subversion/${LOCALSVN}`;
+        do
+        [ -z "${LOCALSVNSUB}" ] && echo "Please enter a vaild number" || break;
+        done
+echo "
+Please add a comment of why this file was changed.
+Hitting 'Enter' will submit."
+read COMMENTIN
+
+   cd ~/subversion/${LOCALSVN}/${LOCALSVNSUB}/
+   svn commit -m "${COMMENTIN}" | tee /tmp/checkin
+
+export CHANNEL4ME=${LOCALSVNSUB}-${LOCALSVN}
+}
+
+# Check files out of Subversion
+function CHECKITOUT {
+   echo "
+Getting Subversion channel lists, please wait.
+"
+        select SVNCHANNEL in `svn list ${SUBVERSIONSERVER}`;
+        do
+        [ -z "${SVNCHANNEL}" ] && echo "Please enter a vaild number" || break;
+        done
+   clear
+   echo "
+
+Looking further into your Channels.
+You may be prompted for a login and to accept the Subversion certificate.
+Please wait. . . . . . . . .
+
+Please select option Channel to download
+(enter the number)
+###
+"
+   select APIP in `svn list ${SUBVERSIONSERVER}/${SVNCHANNEL}/trunk`;
+   do
+        [ -z "${APIP}" ] && echo "Please enter a vaild number" || break;
+        done
+   clear
+   if [ ! -d ~/subversion/${SVNCHANNEL} ]; then
+   mkdir -p ~/subversion/${SVNCHANNEL}
+   fi
+svn co ${SUBVERSIONSERVER}/${SVNCHANNEL}/trunk/${APIP} ~/subversion/${SVNCHANNEL}/${APIP}
+      exit
+}
+
+# Satellite Server Uploads
+function SATELLITECALL {
+
+# Move to the directory we're working in.
+# This helps with pathing during uploads to the Satellite Server
+cd ~/subversion/${LOCALSVN}/${LOCALSVNSUB}/
+
+for i in `egrep Sending /tmp/checkin | awk '{print $2}'`
+do
+
+#Push the files to the server
+sudo rhncfg-manager --server-name=${SATELLITESERVER} update \
+--channel=${LOCALSVNSUB}-${LOCALSVN} --dest-file=/${i} ${i}
+
+if [ $? != "0" ]; then
+        cd -
+        echo "Commit failed Please try again"
+                CHECKITIN
+        fi
+        echo "
+ - - - RHN Push good - - -
+ - There is a bug in the Satellite Server software -
+ - Bug 467189
+ - Please check the permissions within the channel
+"
+
+done
+}
+
+# End Fucntion List
+
+# Ensure that a working folder exists for the user
+if [ ! -d ~/subversion ];
+	then
+	mkdir -p ~/subversion
+	echo "
+A new folder has been created in your home directory called 'subversion'
+All exports will be placed here"
+	fi
+
+# What do you want dumstr to do
+echo "
+What do you need to do in subversion?
+(enter the number)
+###
+"
+select CHECKION in "Check In" "Check Out";
+        do
+         [ -z "${CHECKION}" ] && echo "Please enter a vaild number" || break;
+        done
+clear
+
+# What do I do
+if [ "${CHECKION}" == "Check Out" ]; then
+
+# Call the Check out function
+	CHECKITOUT
+
+elif [ "${CHECKION}" == "Check In" ]; then
+
+# Call the Check in function
+		CHECKITIN
+	if [ $? != "0" ]; then
+	cd -
+	echo "Commit failed Please try again"
+		CHECKITIN
+	fi
+
+	cd -
+	echo "
+	 - - Checkin good - -
+Would you like to update the files you've just checked in to the Satellite Server?
+	"
+select YNMORE in "Yes" "No";
+	do
+	 [ -z "${YNMORE}" ] && echo "Please enter a vaild number" || break;
+        done
+
+	if [ "${YNMORE}" == "Yes" ]; then
+
+# If files are ready to be updated call Satellite function
+		SATELLITECALL
+	fi
+	exit 0
+fi
+rm /tmp/checkin
+unset CHANNEL4ME
