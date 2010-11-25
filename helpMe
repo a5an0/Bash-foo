@@ -1,0 +1,41 @@
+#!/bin/bash
+# AUTHOR -
+# M@ - M@sprackle.org GPG Public Key ID:  0x4ADEA413
+# NAME -
+# HelpMe
+# SYNOPSIS -
+# Use as needed
+# DESCRIPTION -
+# This is just a script I wrote to help my mom and dad. Mom is on a
+# MAC these days and Dad is on a Fedora Core 11 laptop.  So in order
+# to help them as needed I wrote this.
+# This uses port forwarding with SSH so that I can connect to port 8181 on my
+# local system and it actually goes to their local port X over the SSH tunnel.
+# This way they don't need to poke holes in the router/Firewall.
+# The MAC can use VNC but can't X-Forward
+# Fedora can do either but I prefer SSH
+# REVISIONS -
+# 1.0
+
+# My Server/IP - I use my DDNS name to come home.
+SERVER='ddnsdomainfor.home.com'
+
+# SSH
+function SSH {
+ssh -L 8181:localhost:22 ${SERVER}
+}
+
+# VNC
+function VNC {
+ssh -L 8181:localhost:5900 ${SERVER}
+}
+
+# Ask what they would like
+echo "
+Would you like to enable SSH or VNC?
+"
+select APP in "VNC" "SSH";
+do
+	[ -z "${APP}" ] && echo "Please enter a vaild number" || break;
+	done
+${APP}
