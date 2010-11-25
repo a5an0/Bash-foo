@@ -1,0 +1,62 @@
+#!/bin/bash
+# AUTHOR -
+# M@ - M@sprackle.org GPG Public Key ID:  0x4ADEA413
+# NAME -
+# lazyLab
+# SYNOPSIS -
+# `./lazyLab FUNCTIONTOCALL`
+# DESCRIPTION -
+# I needed a quick way to deploy things to my lab machines.
+# I only have 4 so the for loop stops at 24.  Change the sequence number
+# to more if you need it.
+# To add anything just copy the reboot function.  Name it and put in the
+# commands you may want to send.
+# REVISIONS -
+# Only one published at this time.
+# LIMITATIONS - 
+
+IPADDR='192.168.32'
+ISCSISERVER='$IPADDR..20'
+for i in $(seq 4)
+do
+#
+function reboot () {
+# reboot all the systems
+echo "shutdown -r now" | ssh root@$IPADDR.2$i /bin/bash
+# End reboot
+}
+#
+function ricci () {
+# Install ricci
+echo "yum install ricci -y" | ssh root@$IPADDR.2$i /bin/bash
+echo "service start ricci" | ssh root@$IPADDR.2$i /bin/bash
+# End ricci install
+}
+#
+function keys () {
+# Deploy the SSH key
+echo "mkdir /root/.ssh" | ssh root@$IPADDR.2$i /bin/bash
+scp authorized_keys root@$IPADDR.2$i:/root/.ssh/authorized_keys
+echo "chmod -R 600 /root/.ssh" | ssh root@$IPADDR.2$i /bin/bash
+scp sshd_config root@$IPADDR.2$i:/etc/ssh/sshd_config
+echo "/etc/init.d/sshd restart" | ssh root@$IPADDR.2$i /bin/bash
+# Deployment of key stop
+}
+function update () {
+# Deploy repo for updates and update
+scp dag.repo root@$IPADDR.2$i:/etc/yum.repos.d/dag.repo
+scp RPM-GPG-KEY.dag.txt root@$IPADDR.2$i:~/
+echo "rpm --import ~/RPM-GPG-KEY.dag.txt" | ssh root@$IPADDR.2$i /bin/bash
+echo "yum update -y &" | ssh root@$IPADDR.2$i /bin/bash &
+# End updates
+}
+function iscsi () {
+# Setup my iscsi targets
+iscsiadm --mode discovery --type sendtargets --portal $ISCSISERVER
+iscsiadm --mode node --targetname iqn.2009-03.org.sprackle:1 --portal $ISCSISERVER:3260 --login
+iscsiadm --mode node --targetname iqn.2009-03.org.sprackle:2 --portal $ISCSISERVER:3260 --login
+iscsiadm --mode node --targetname iqn.2009-03.org.sprackle:3 --portal $ISCSISERVER:3260 --login
+# End Setup of iscsi targets
+}
+$1
+done
