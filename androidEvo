@@ -1,0 +1,29 @@
+#!/bin/bash
+# AUTHOR: M@sprackle.org
+# PURPOSE: To convert one file or many files to Android format and size.
+# LIMITATIONS: Get the Cancel button working in Zenity pop-up
+# INSTALL: Place this script in "~/.gnome2/nautilus-scripts/Android"
+# and set to execute `chmod +x ~/.gnome2/nautilus-scripts/Android`
+# USE: Just right click on a file or folder that contains files you
+# would like to convert to an Android format.  This was converted from
+# my already used iPhone script.
+#
+# Where do you want all of these files to be saved?
+# You should NOT have to edit below this line
+SAVESPOT="~/AndroidMovies"
+#
+# Same as above I just wanted a single place to find my files
+		if [ ! -d $SAVESPOT ]; then
+			mkdir $SAVESPOT
+		fi
+# Lets see if this was a single file or a Directory
+if [ -f "$1" ]; then
+#
+# Let's cut up the name so it's not example.avi.mp4
+NEWNAME=`echo "$1" | awk -F. '{print $1}'`
+#
+# Run the command - I found all these flags on some website.
+# So far they're good.
+ffmpeg -i "$1" -s 480x256 -vcodec mpeg4 -acodec libfaac -ac 1 -ar 16000 -r 13 -ab 32000 -aspect 3:2 -padtop 32 -padbottom 32 $SAVESPOT/"$NEWNAME".mp4
+fi
+#Thanks JonTheNiceGuy - http://jon.sprig.gs for finding the missing 'fi'
