@@ -1,0 +1,42 @@
+#!/bin/bash
+# AUTHOR -
+# M@ - M@sprackle.org GPG Public Key ID:  0x4ADEA413
+# NAME -
+# gpgDo
+# SYNOPSIS -
+# `./gpgDo FILENAMETOWORKWITH`
+# DESCRIPTION -
+# A quick script for those who can't remember the GPG commands.
+# REVISIONS -
+# Only one published at this time.
+# LIMITATIONS -
+# TBD
+
+# My email address
+MYEMAIL="m@sprackle.org"
+#
+select GPGCALL in "Decrypt_file" "Encrypt_file" \
+"Encrypt_file_to_person_in_key_store" "Encrypt_with_symmetric_phrase";
+        do
+         [ -z "${GPGCALL}" ] && echo "Please enter a vaild number" || break;
+        done
+
+#
+function Decrypt_file () {
+	gnome-terminal --command="gpg --output ./$@.out --decrypt ./$@"
+}
+#
+function Encrypt_file () {
+	gpg --recipient $MYEMAIL --armor --encrypt "$@"
+}
+#
+function Encrypt_file_to_person_in_key_store () {
+	echo "$(gpg --list-keys)"
+	gnome-terminal --command="gpg --armor --encrypt $@"
+}
+#
+function Encrypt_with_symmetric_phrase () {
+	gpg -c "$@"
+}
+
+$GPGCALL
