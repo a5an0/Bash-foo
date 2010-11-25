@@ -1,0 +1,28 @@
+#!/bin/bash
+# AUTHOR -
+# M@ - M@sprackle.org GPG Public Key ID:  0x4ADEA413
+# NAME -
+# lappyVonRsync
+# SYNOPSIS -
+# `15 1 * * * /home/username/scripts/lappyVonRsync`
+# DESCRIPTION -
+# To keep my NFS share in sync with my laptop ~
+# REVISIONS -
+# Only one published at this time.
+# LIMITATIONS -
+# I only allow the sync to occur if my laptop is  hard wired and on my internal network.
+
+# My home
+HOMEDIR="/home/username/"
+SHARENAME="/Share/username"
+SERVER="192.168.227.254"
+
+# Look at the eth0 to see if the system is on my internal network.
+/sbin/ifconfig eth0 | egrep "192.168.227"
+
+# Since it is start the rsync.
+if [ $? == "0" ]; then
+
+# rsync command
+rsync -vaz --exclude-from="${HOMEDIR}.rsync/exclude" -e ssh --delete ${HOMEDIR} ${SERVER}:${SHARENAME}
+fi
