@@ -1,0 +1,57 @@
+#!/bin/bash
+# Author: M@sprackle.org
+# Purpose: In order to autohash and import files located in the 
+# store directory into the datastore.
+# Use: This should really go into a cron job.
+# `01 * * * * /PATH/TO/storeMD5`
+# Define your installation folders
+WEBDIR="/home/user/www/example.com"
+STOREDIR="/home/user/www/example.com/wp-content/uploads/wpsc/downloadables"
+UPLOADDIR="/home/user/example-store/upload"
+
+# I'll check to ensure that your folders are created.  
+if [ ! -d  ${STOREDIR} ]; then
+	mkdir -p ${STOREDIR}
+fi
+
+if [ ! -d ${SQLDIR} ]; then
+	mkdir -p ${SQLDIR}
+fi
+
+if [ ! -d  ${UPLOADDIR} ]; then
+	mkdir -p ${UPLOADDIR}
+fi
+
+# In case of multiple files the for loop begins.
+for i in `ls ${UPLOADDIR}`; do
+
+			# Change to the upload directory to just make it easier.
+			cd ${UPLOADDIR}	
+
+			# Manipulate the file name
+			NEWNAME=`md5sum $i | awk '{print $1}'`
+			EXTNAME=`echo $i | awk -F. '{print $2}'`
+			IDNAME=`echo $i | awk -F. '{print $1}'`
+			
+			# Pull your database information from the wordpress installation
+			DBNAME=`egrep "DB_NAME" ${WEBDIR}/wp-config.php | awk '{print $2}' | awk -F\) '{print $1}'| cut -c 2- | awk -F"'" '{print $1}'`
+			DBUSER=`egrep "DB_USER" ${WEBDIR}/wp-config.php | awk '{print $2}' | awk -F\) '{print $1}'| cut -c 2- | awk -F"'" '{print $1}'`
+			DBPWD=`egrep "DB_PASSWORD" ${WEBDIR}/wp-config.php | awk '{print $2}' | awk -F\) '{print $1}'| cut -c 2- | awk -F"'" '{print $1}'`
+
+			# Current date
+			DATE4=`date +%D`
+			
+			# Move the file with it's new md5sum name to the web store
+			mv $i ${STOREDIR}/${NEWNAME}
+
+			# Insert the information about the file into the database.
+			mysql -u ${DBUSER} --password=${DBPWD} ${DBNAME} <<EOF
+INSERT INTO wp_product_files (filename, mimetype, idhash, date) VALUES('$i', '${EXTNAME}', '${NEWNAME}', '${DATE4}');
+EOF
+			# Insert the information about the file into the database.
+			mysql -u ${DBUSER} --password=${DBPWD} ${DBNAME} <<EOF
+INSERT INTO wp_product_list (name, publish, active ) VALUES('${IDNAME}', '1', '1');
+EOF
+
+
+done
