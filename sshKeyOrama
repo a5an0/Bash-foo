@@ -1,0 +1,33 @@
+#!/bin/bash
+# AUTHOR -
+# M@ - M@sprackle.org GPG Public Key ID:  0x4ADEA413
+# NAME -
+# sshKeyORama
+# SYNOPSIS -
+# ./sshKeyORama
+# DESCRIPTION -
+# A script to harvest all ssh public keys from a network
+# REVISIONS -
+# Only one published at this time.
+# LIMITATIONS -
+# TBD
+
+# IP class C to scan
+IPADDR='192.168.0'
+
+# Scan the entire class C for public keys
+for i in $(seq 254)
+do
+
+# Ensure that the host is live by looking up the IP in DNS.
+host ${IPADDR}.$i
+	if [ $? == 0 ];
+	then
+	# If DNS returns that the IP is listed then grab the public keys
+	# You could kill the if then and just have the line below if you didn't care about dns.
+	# ssh-keyscan -t rsa ${IPADDR}.$i >> ~/ssh_known_hosts
+	ssh-keyscan -t rsa $(host ${IPADDR}.$i | awk '{print $5}') >> ~/ssh_known_hosts
+	# This ssh_known_hosts file can be placed in /etc/ssh/ssh_known_hosts
+	# every users will then get these keys in their local .ssh/known_hosts file
+	fi
+done
