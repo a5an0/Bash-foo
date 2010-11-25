@@ -1,0 +1,26 @@
+#!/bin/bash
+# AUTHOR -
+# M@ - M@sprackle.org GPG Public Key ID:  0x4ADEA413
+# NAME -
+# rpm_verify
+# SYNOPSIS -
+# `15 1 * * * /home/username/scripts/rpm_verify`
+# DESCRIPTION -
+# Check all the RPMs installed on this system by trusted
+# and ensure that the packages were signed by a trusted source.
+# REVISIONS -
+# Only one published at this time.
+# LIMITATIONS -
+# I plan on putting some file checking at a later date.
+
+# Trusted Keys seperated by a pipe
+TRUSTKEY="5326810137017186|219180cddb42a60e"
+
+for i in `rpm -qa`
+do
+	rpm -qi $i | egrep $TRUSTKEY
+		if [ $? != 0 ];
+		then
+			echo "RPM $i not signed by trusted key" >> /tmp/KeyResults
+		fi
+done
