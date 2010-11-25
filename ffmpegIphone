@@ -1,0 +1,32 @@
+#!/bin/bash
+# AUTHOR: M@sprackle.org
+# PURPOSE: To convert one file or many files to iphone format and size.
+# LIMITATIONS: Get the Cancel button working in Zenity pop-up
+# INSTALL: Place this script in "~/.gnome2/nautilus-scripts/iPhone"
+# and set to execute `chmod +x ~/.gnome2/nautilus-scripts/iPhone`
+# USE: Just right click on a file or folder that contains files you
+# would like to convert to an iPhone/iTouch format.
+#
+# Where do you want all of these files to be saved?
+# You should NOT have to edit below this line
+IPHONESAVESPOT="~/iPhoneMovies"
+#
+# Same as above I just wanted a single place to find my files
+        if [ ! -d $IPHONESAVESPOT ]; then
+        	mkdir $IPHONESAVESPOT
+        fi
+# Lets see if this was a single file or a Directory
+if [ -f "$1" ]; then
+#
+# Let's cut up the name so it's not example.avi.mp4
+NEWNAME=`echo "$1" | awk -F. '{print $1}'`
+#
+# Run the command - I found all these flags on some website.
+# So far they're good.
+ffmpeg -y -threads 4 -i "$1" -r 29.97 -vcodec libx264 -s 480x272 \
+-flags +loop -cmp +chroma -deblockalpha 0 -deblockbeta 0 -crf 24 \
+-bt 256k -refs 1 -coder 0 -me umh -me_range 16 -subq 5 \
+-partitions +parti4x4+parti8x8+partp8x8 -g 250 -keyint_min 25 \
+-level 30 -qmin 10 -qmax 51 -trellis 2 -sc_threshold 40 \
+-i_qfactor 0.71 -acodec libfaac -ab 128k -ar 48000 -ac 2 \
+$IPHONESAVESPOT/"$NEWNAME".mp4 
