@@ -1,0 +1,36 @@
+#!/bin/bash
+# AUTHOR: M@sprackle.org
+# PURPOSE: To convert a CSV to LDIF
+# LIMITATIONS: Expects the following format use in the CSV.
+# Surname,GivenName,UID,Mail,Phone,Description
+# This is a little prettier than the previous one bus still
+# should deliver the same results.
+# You should also edit the default GID as I've set it to a rush song
+# INSTALL: change script to +x and run with a file option
+# USE: modify the FILENAME on the cat and run.
+# $ csv2ldif file.csv
+
+for i in `cat $1`;do
+
+UIDNUMBER=`seq 2000 2100`
+OUWHERE="ou=name"
+DNWHERE="dc=example,dc=com"
+FILE=">> ldif.txt"
+GIVENNAME=`echo ${i} | awk -F, '{print $2}'`
+SURNAME=`echo ${i} | awk -F, '{print $1}'`
+USERNAME=`echo ${i} | awk -F, '{print $3}'`
+MAILADDR=`echo ${i} | awk -F, '{print $4}'`
+DEFAULTGID='2112'
+
+echo "dn=${OUWHERE},${DNWHERE}"
+echo "objectClass: person" ${FILE}
+echo "objectClass: top" ${FILE}
+echo "objectClass: inetorgperson" ${FILE}
+echo "uid: ${USERNAME}" ${FILE}
+echo "sn: ${SURNAME}" ${FILE}
+echo "givenname: ${GIVENAME}" ${FILE}
+echo "mail: ${MAILADDR}" ${FILE}
+echo "uidNumber: ${UIDNUMBER}" ${FILE}
+echo "gid: ${DEFAULTGID}" ${FILE}
+echo "" ${FILE}
+done
