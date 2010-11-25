@@ -1,0 +1,203 @@
+#!/bin/bash
+# AUTHOR -
+# M@ - M@sprackle.org GPG Public Key ID:  0x4ADEA413
+# NAME -
+# fc8installer
+# SYNOPSIS -
+# ./fc8installer
+# DESCRIPTION -
+# This script was created for a Fedora Core 8 installtion on a HP Pavillion DV6000
+# REVISIONS -
+# Only one published at this time.
+# LIMITATIONS -
+# TBD
+
+# Make sure only root can run our script
+if [ "$(id -u)" != "0" ]; then
+   echo "This script must be run as root.
+Please login as root to complete this script." 1>&2
+   exit 1
+fi
+
+#Install the Livna Repo for this installtion.
+rpm -Uvh http://rpm.livna.org/livna-release-$(cat /etc/redhat-release | awk '{print $3}').rpm
+
+#Go ahead and get festival to make it cool.
+yum install festival -y
+
+#Hello World
+echo "
+Hello $(cat /etc/passwd | grep $(whoami) | awk -F: '{print $5}');.
+I am the Brain Interactive Construct.
+You may call me brainiac.
+I will assist you in the configuration of this system today." | festival --tts
+pause 1
+echo "
+I have just installed the Livna repository.
+I will now install some packages needed to setup the machine as you like it.
+Please note I will be installing the MP3 DVD codecs.
+As wells as some wireless tools I know that you like." | festival --tts
+
+#YUM YUM
+yum install \
+kernel-devel \
+pidgin kdepim firefox kgpg easytag \
+b43-fwcutter NetworkManager wpa_supplicant wlist aircrack kismet \
+vlc vlc-plugin lame amarok-extras-nonfree k3b-extras-nonfree xine-lib-extras-nonfree \
+gcc++ transcode faad2 aif unrar -y
+
+#WiFi Magic..
+echo "
+I am attempting to set up your wireless networking.
+I will be using the broadcom chipset.
+Would you like for me to attempt this installation?
+Please type the letter y for yes and y for no." | festival --tts
+read WIFI
+if [ "$WIFI" = "y" ]
+then
+wget http://www.wells.vg/broadcom-wl-4.80.53.0.tar.bz2
+tar -xjvf broadcom-wl-4.80.53.0.tar.bz2
+bcm43xx-fwcutter -w /lib/firmware/ broadcom-wl-4.80.53.0/kmod/wl_apsta.o
+fi
+
+#Tighten Up
+echo "
+The N S A released a document on hardening Redhat and fedora systems.
+I'm using that doc now to harden this box" | festival --tts
+
+echo "
+#Added to lock it down
+net.ipv4.conf.all.rp_filter=1
+net.ipv4.conf.all.accept_source_route=0
+net.ipv4.icmp_echo_ignore_broadcasts=1
+net.ipv4.icmp_ignore_bogus_error_messages=1
+kernel.exec-shield=1
+kernel.randomize_va_space=1
+" >> /etc/sysctl.conf
+
+echo "
+alias net-pf-10 off" >> /etc/modprobe.conf
+
+hostname | awk '{print "HOSTNAME="$1}' > /etc/sysconfig/network
+echo "
+NETWORKING=yes
+NETWORKING_IPV6=no
+IPV6INIT=no" >> /etc/sysconfig/network
+
+echo "
+Fedora has some strange rules in the default firewall.
+So I've stripped those out for you" | festival --tts
+
+echo "
+# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:RH-Firewall-1-INPUT - [0:0]
+-A INPUT -j RH-Firewall-1-INPUT
+-A RH-Firewall-1-INPUT -i lo -j ACCEPT
+-A RH-Firewall-1-INPUT -p icmp --icmp-type any -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A RH-Firewall-1-INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT"
+> /etc/sysconfig/iptables
+
+#CHKCONFIG IT OFF
+echo "
+There are a many services enabled that open ports,
+I'm going to turn them off.
+If you need them turn them back on later" | festival --tts
+
+chkconfig backuppc off
+chkconfig bluetooth off
+chkconfig cups off
+chkconfig dnsmasq off
+chkconfig dund off
+chkconfig firstboot off
+chkconfig gpm off
+chkconfig httpd off
+chkconfig irda off
+chkconfig kudzu off
+chkconfig lirc off
+chkconfig lisa off
+chkconfig lm_sensors off
+chkconfig multipathd off
+chkconfig nasd off
+chkconfig netconsole off
+chkconfig netplugd off
+chkconfig NetworkManagerDispatcher off
+chkconfig nfs off
+chkconfig nscd off
+chkconfig ntpd off
+chkconfig openvpn off
+chkconfig pand off
+chkconfig psacct off
+chkconfig racoon off
+chkconfig rdisc off
+chkconfig rpcbind off
+chkconfig rpcgssd off
+chkconfig rpcidmapd off
+chkconfig rpcsvcgssd off
+chkconfig saslauthd off
+chkconfig sendmail off
+chkconfig smartd off
+chkconfig smolt off
+chkconfig winbind off
+chkconfig ypbind off
+chkconfig zvbid off
+
+#CHKCONFIG IT ON
+echo "
+I have disabled all un-needed services.
+Now I will ensure that the correct ones are enabled" | festival --tts
+chkconfig acpid on
+chkconfig anacron on
+chkconfig atd on
+chkconfig auditd on
+chkconfig autofs on
+chkconfig avahi-daemon on
+chkconfig ConsoleKit on
+chkconfig cpuspeed on
+chkconfig crond on
+chkconfig gpm on
+chkconfig haldaemon on
+chkconfig ip6tables on
+chkconfig iptables on
+chkconfig irqbalance on
+chkconfig libvirtd on
+chkconfig mdmonitor on
+chkconfig messagebus on
+chkconfig netconsole on
+chkconfig netfs on
+chkconfig NetworkManager on
+chkconfig network on
+chkconfig nfslock on
+chkconfig pcscd on
+chkconfig qemu on
+chkconfig racoon on
+chkconfig restorecond on
+chkconfig rsyslog on
+chkconfig setroubleshoot on
+chkconfig sshd on
+chkconfig udev-post on
+chkconfig wpa_supplicant on
+chkconfig yum-updatesd on
+
+echo "
+I have located the video drivers for this laptop.
+I will start the installation now.
+You will need to be part of this installation as the vendor has supplied no way for me to control this for you." | festival --tts
+wget http://us.download.nvidia.com/XFree86/Linux-x86_64/169.09/NVIDIA-Linux-x86_64-169.09-pkg2.run
+sh NVIDIA-Linux-x86_64-169.09-pkg2.run
+
+#Update it
+echo "
+I'm done with the exception of that nasty update.
+This will take a while after this I will reboot the system for you" | festival --tts
+#YUM UPDATE
+yum update -y && echo "I have finished the update and will reboot at this time.
+You will more than likely have to reinstall the NVIDIA driver we installed earlier.   "| festival --tts && init 6
